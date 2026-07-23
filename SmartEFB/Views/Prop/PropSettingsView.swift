@@ -65,15 +65,15 @@ struct PropSettingsView: View {
                     if store.selected.propType == .constantSpeed,
                        let mp = recommended.base.manifoldPressureInHg {
                         recommendationRow("Ladedruck / Drehzahl",
-                                          "\(mp, format: .number.precision(.fractionLength(0)))\" · \(recommended.base.rpm) RPM")
+                                          "\(Int(mp.rounded()))\" · \(recommended.base.rpm) RPM")
                     } else {
                         recommendationRow("Drehzahl", "\(recommended.base.rpm) RPM")
                     }
                     recommendationRow("Leistung", "\(recommended.base.percentPower) %")
                     recommendationRow("TAS (korrigiert)",
-                                      "\(recommended.adjustedTasKt, format: .number.precision(.fractionLength(0))) kt")
+                                      "\(Int(recommended.adjustedTasKt.rounded())) kt")
                     recommendationRow("Verbrauch",
-                                      "\(recommended.base.fuelFlowLph, format: .number.precision(.fractionLength(0))) l/h")
+                                      "\(Int(recommended.base.fuelFlowLph.rounded())) l/h")
                 }
             }
         }
