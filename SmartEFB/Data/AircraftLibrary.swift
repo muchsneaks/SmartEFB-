@@ -6,7 +6,7 @@ import Foundation
 ///   demonstration and training. Always verify against the official POH /
 ///   AFM before real-world use.
 enum AircraftLibrary {
-    static let all: [Aircraft] = [cessna172, piperArcher, diamondDA40, cirrusSR22]
+    static let all: [Aircraft] = [cessna172, piperArcher, diamondDA20, diamondDA40, cirrusSR22]
 
     // MARK: - Cessna 172S Skyhawk (fixed pitch)
 
@@ -56,13 +56,39 @@ enum AircraftLibrary {
         vSpeeds: VSpeeds(rotateKt: 57, bestRateOfClimbKt: 76, bestAngleOfClimbKt: 64, approachKt: 66, stallLandingKt: 45, neverExceedKt: 154)
     )
 
+    // MARK: - Diamond DA20-C1 Eclipse (fixed pitch)
+
+    static let diamondDA20 = Aircraft(
+        name: "Diamond DA20-C1 Eclipse",
+        registration: "D-EUMM",
+        icaoType: "DA20",
+        symbolName: "airplane",
+        imageName: "da20",
+        propType: .fixedPitch,
+        emptyWeightKg: 529,
+        maxTakeoffWeightKg: 800,
+        defaultPlanningWeightKg: 720,
+        takeoff: RunwayPerformance(groundRollM: 261, distanceOver50ftM: 430),
+        landing: RunwayPerformance(groundRollM: 175, distanceOver50ftM: 400),
+        surfaceFactors: SurfaceFactors(grassFactor: 1.15, wetLandingFactor: 1.15),
+        cruiseSettings: [
+            CruiseSetting(pressureAltitudeFt: 2000, rpm: 2200, manifoldPressureInHg: nil, percentPower: 75, trueAirspeedKt: 125, fuelFlowLph: 22),
+            CruiseSetting(pressureAltitudeFt: 4000, rpm: 2300, manifoldPressureInHg: nil, percentPower: 71, trueAirspeedKt: 129, fuelFlowLph: 21),
+            CruiseSetting(pressureAltitudeFt: 6000, rpm: 2400, manifoldPressureInHg: nil, percentPower: 66, trueAirspeedKt: 132, fuelFlowLph: 19),
+            CruiseSetting(pressureAltitudeFt: 8000, rpm: 2450, manifoldPressureInHg: nil, percentPower: 61, trueAirspeedKt: 134, fuelFlowLph: 18),
+            CruiseSetting(pressureAltitudeFt: 10000, rpm: 2500, manifoldPressureInHg: nil, percentPower: 57, trueAirspeedKt: 135, fuelFlowLph: 16)
+        ],
+        vSpeeds: VSpeeds(rotateKt: 44, bestRateOfClimbKt: 68, bestAngleOfClimbKt: 57, approachKt: 55, stallLandingKt: 39, neverExceedKt: 164)
+    )
+
     // MARK: - Diamond DA40 NG (constant speed)
 
     static let diamondDA40 = Aircraft(
         name: "Diamond DA40 NG",
-        registration: "D-EDGN",
+        registration: "OE-DWL",
         icaoType: "DA40",
         symbolName: "airplane",
+        imageName: "da40",
         propType: .constantSpeed,
         emptyWeightKg: 940,
         maxTakeoffWeightKg: 1310,

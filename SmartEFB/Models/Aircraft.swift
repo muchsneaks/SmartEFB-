@@ -18,8 +18,12 @@ struct Aircraft: Codable, Hashable, Identifiable {
     /// ICAO type designator, e.g. "C172".
     var icaoType: String
 
-    /// SF Symbol name used to represent the aircraft in lists.
+    /// SF Symbol name used as a fallback when no photo is available.
     var symbolName: String
+
+    /// Optional asset-catalog name of a transparent side-profile photo. When
+    /// present and loadable, it is shown instead of the SF Symbol.
+    var imageName: String? = nil
 
     /// Propeller / power-management type.
     var propType: PropType

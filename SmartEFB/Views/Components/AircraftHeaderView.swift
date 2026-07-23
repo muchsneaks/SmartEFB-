@@ -6,11 +6,8 @@ struct AircraftHeaderView: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: aircraft.symbolName)
-                .font(.title2)
-                .foregroundStyle(Theme.accent)
-                .frame(width: Theme.controlSize, height: Theme.controlSize)
-                .background(Theme.accent.opacity(0.15), in: .rect(cornerRadius: Theme.cornerRadius))
+            AircraftThumbnail(aircraft: aircraft)
+                .frame(width: 92, height: 56)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(aircraft.name)
