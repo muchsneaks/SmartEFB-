@@ -44,6 +44,20 @@ Flugvorbereitung in der Allgemeinen Luftfahrt.
 - Deployment-Ziel: iOS 18.0
 - Keine externen Abhängigkeiten (reines SwiftUI/Foundation).
 
+## Flugzeugfotos hinzufügen
+
+Für die DA20 und DA40 sind in `Assets.xcassets` bereits die Image-Sets `da20`
+und `da40` angelegt. Es fehlen nur die transparenten PNG-Dateien:
+
+- **In Xcode (empfohlen):** `Assets.xcassets` öffnen, das Set `da20` bzw. `da40`
+  wählen und das transparente PNG in den Universal-Slot ziehen.
+- **Per Dateisystem:** die Bilder unter genau diesen Pfaden ablegen und committen:
+  - `SmartEFB/Assets.xcassets/da20.imageset/da20.png`
+  - `SmartEFB/Assets.xcassets/da40.imageset/da40.png`
+
+Solange ein Foto fehlt, zeigt die App automatisch das Flugzeug-Symbol als
+Fallback – es entsteht also kein leerer Platzhalter.
+
 ## Projektstruktur
 
 ```
