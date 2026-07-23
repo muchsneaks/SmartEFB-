@@ -14,7 +14,7 @@ struct PropSettingsView: View {
     }
 
     private var adjustedSettings: [AdjustedCruiseSetting] {
-        CruiseAdvisor.adjustedSettings(for: store.selected, conditions: conditions)
+        CruiseAdvisor.adjustedSettings(for: store.selected, conditions: conditions.snapshot)
     }
 
     var body: some View {

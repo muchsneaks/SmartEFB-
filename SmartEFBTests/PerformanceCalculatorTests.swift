@@ -20,7 +20,7 @@ struct PerformanceCalculatorTests {
 
     @Test func takeoffAtReferenceMatchesPublishedFigures() {
         let aircraft = AircraftLibrary.cessna172
-        let result = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: referenceConditions(for: aircraft))
+        let result = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: referenceConditions(for: aircraft).snapshot)
         #expect(abs(result.groundRollM - aircraft.takeoff.groundRollM) < 1)
         #expect(abs(result.distanceOver50ftM - aircraft.takeoff.distanceOver50ftM) < 1)
     }
@@ -32,8 +32,8 @@ struct PerformanceCalculatorTests {
         hot.fieldElevationFt = 5000
         hot.temperatureC = 35
 
-        let baseResult = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: base)
-        let hotResult = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: hot)
+        let baseResult = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: base.snapshot)
+        let hotResult = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: hot.snapshot)
         #expect(hotResult.groundRollM > baseResult.groundRollM)
     }
 
@@ -44,8 +44,8 @@ struct PerformanceCalculatorTests {
         conditions.windDirectionDeg = 250
         conditions.windSpeedKt = 15
 
-        let calm = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: referenceConditions(for: aircraft))
-        let headwind = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: conditions)
+        let calm = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: referenceConditions(for: aircraft).snapshot)
+        let headwind = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: conditions.snapshot)
         #expect(headwind.groundRollM < calm.groundRollM)
     }
 
@@ -56,8 +56,8 @@ struct PerformanceCalculatorTests {
         conditions.windDirectionDeg = 70 // blowing from behind
         conditions.windSpeedKt = 8
 
-        let calm = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: referenceConditions(for: aircraft))
-        let tailwind = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: conditions)
+        let calm = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: referenceConditions(for: aircraft).snapshot)
+        let tailwind = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: conditions.snapshot)
         #expect(tailwind.groundRollM > calm.groundRollM)
     }
 
@@ -66,8 +66,8 @@ struct PerformanceCalculatorTests {
         let conditions = referenceConditions(for: aircraft)
         conditions.weightKg = aircraft.emptyWeightKg + 100
 
-        let mtom = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: referenceConditions(for: aircraft))
-        let light = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: conditions)
+        let mtom = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: referenceConditions(for: aircraft).snapshot)
+        let light = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: conditions.snapshot)
         #expect(light.groundRollM < mtom.groundRollM)
     }
 
@@ -76,8 +76,8 @@ struct PerformanceCalculatorTests {
         let conditions = referenceConditions(for: aircraft)
         conditions.surface = .grass
 
-        let paved = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: referenceConditions(for: aircraft))
-        let grass = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: conditions)
+        let paved = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: referenceConditions(for: aircraft).snapshot)
+        let grass = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: conditions.snapshot)
         #expect(grass.groundRollM > paved.groundRollM)
     }
 
@@ -86,8 +86,8 @@ struct PerformanceCalculatorTests {
         let conditions = referenceConditions(for: aircraft)
         conditions.runwayCondition = .wet
 
-        let dry = PerformanceCalculator.landing(aircraft: aircraft, conditions: referenceConditions(for: aircraft))
-        let wet = PerformanceCalculator.landing(aircraft: aircraft, conditions: conditions)
+        let dry = PerformanceCalculator.landing(aircraft: aircraft, conditions: referenceConditions(for: aircraft).snapshot)
+        let wet = PerformanceCalculator.landing(aircraft: aircraft, conditions: conditions.snapshot)
         #expect(wet.groundRollM > dry.groundRollM)
     }
 
@@ -96,7 +96,7 @@ struct PerformanceCalculatorTests {
         let conditions = referenceConditions(for: aircraft)
         conditions.runwayLengthM = 100
 
-        let result = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: conditions)
+        let result = PerformanceCalculator.takeoff(aircraft: aircraft, conditions: conditions.snapshot)
         #expect(result.fitsOnRunway == false)
         #expect(result.marginM < 0)
     }

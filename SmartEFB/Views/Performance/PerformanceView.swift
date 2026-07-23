@@ -9,8 +9,8 @@ struct PerformanceView: View {
 
     private var result: PerformanceResult {
         switch mode {
-        case .takeoff: PerformanceCalculator.takeoff(aircraft: store.selected, conditions: conditions)
-        case .landing: PerformanceCalculator.landing(aircraft: store.selected, conditions: conditions)
+        case .takeoff: PerformanceCalculator.takeoff(aircraft: store.selected, conditions: conditions.snapshot)
+        case .landing: PerformanceCalculator.landing(aircraft: store.selected, conditions: conditions.snapshot)
         }
     }
 

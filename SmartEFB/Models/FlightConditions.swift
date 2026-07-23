@@ -48,6 +48,23 @@ final class FlightConditions {
     /// Planned take-off / landing weight in kilograms.
     var weightKg: Double = 1000
 
+    /// An immutable, `Sendable` copy for use by the pure calculators.
+    var snapshot: ConditionsSnapshot {
+        ConditionsSnapshot(
+            fieldElevationFt: fieldElevationFt,
+            qnhHpa: qnhHpa,
+            temperatureC: temperatureC,
+            windDirectionDeg: windDirectionDeg,
+            windSpeedKt: windSpeedKt,
+            runwayHeadingDeg: runwayHeadingDeg,
+            runwayLengthM: runwayLengthM,
+            runwaySlopePercent: runwaySlopePercent,
+            surface: surface,
+            runwayCondition: runwayCondition,
+            weightKg: weightKg
+        )
+    }
+
     /// Aligns the mutable weight with the currently selected aircraft, clamping
     /// it to the aircraft's maximum take-off weight.
     func syncWeight(to aircraft: Aircraft) {

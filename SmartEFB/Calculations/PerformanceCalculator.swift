@@ -46,12 +46,12 @@ enum PerformanceCalculator {
     static let landingSlopeFactor: Double = 0.05
 
     /// Computes a take-off performance result.
-    static func takeoff(aircraft: Aircraft, conditions: FlightConditions) -> PerformanceResult {
+    static func takeoff(aircraft: Aircraft, conditions: ConditionsSnapshot) -> PerformanceResult {
         compute(reference: aircraft.takeoff, aircraft: aircraft, conditions: conditions, isLanding: false)
     }
 
     /// Computes a landing performance result.
-    static func landing(aircraft: Aircraft, conditions: FlightConditions) -> PerformanceResult {
+    static func landing(aircraft: Aircraft, conditions: ConditionsSnapshot) -> PerformanceResult {
         compute(reference: aircraft.landing, aircraft: aircraft, conditions: conditions, isLanding: true)
     }
 
@@ -60,7 +60,7 @@ enum PerformanceCalculator {
     private static func compute(
         reference: RunwayPerformance,
         aircraft: Aircraft,
-        conditions: FlightConditions,
+        conditions: ConditionsSnapshot,
         isLanding: Bool
     ) -> PerformanceResult {
         let pa = AtmosphereCalculator.pressureAltitude(
@@ -103,7 +103,7 @@ enum PerformanceCalculator {
     /// The combined multiplier applied to the reference distance.
     private static func totalFactor(
         aircraft: Aircraft,
-        conditions: FlightConditions,
+        conditions: ConditionsSnapshot,
         densityAltitudeFt: Double,
         headwind: Double,
         isLanding: Bool

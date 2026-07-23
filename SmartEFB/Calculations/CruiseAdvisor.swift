@@ -19,7 +19,7 @@ enum CruiseAdvisor {
     /// altitude flagged as recommended.
     static func adjustedSettings(
         for aircraft: Aircraft,
-        conditions: FlightConditions
+        conditions: ConditionsSnapshot
     ) -> [AdjustedCruiseSetting] {
         let pa = AtmosphereCalculator.pressureAltitude(
             elevationFt: conditions.fieldElevationFt,

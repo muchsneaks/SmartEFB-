@@ -9,7 +9,7 @@ struct CruiseAdvisorTests {
         conditions.fieldElevationFt = 6000
         conditions.qnhHpa = 1013.25
 
-        let settings = CruiseAdvisor.adjustedSettings(for: aircraft, conditions: conditions)
+        let settings = CruiseAdvisor.adjustedSettings(for: aircraft, conditions: conditions.snapshot)
         let recommended = settings.first { $0.isRecommended }
         #expect(recommended?.base.pressureAltitudeFt == 6000)
     }
@@ -20,7 +20,7 @@ struct CruiseAdvisorTests {
         conditions.fieldElevationFt = 7500
         conditions.qnhHpa = 1013.25
 
-        let settings = CruiseAdvisor.adjustedSettings(for: aircraft, conditions: conditions)
+        let settings = CruiseAdvisor.adjustedSettings(for: aircraft, conditions: conditions.snapshot)
         #expect(settings.filter(\.isRecommended).count == 1)
     }
 
@@ -31,8 +31,8 @@ struct CruiseAdvisorTests {
         let warm = FlightConditions()
         warm.temperatureC = 30
 
-        let coldTas = CruiseAdvisor.adjustedSettings(for: aircraft, conditions: cold).first?.adjustedTasKt ?? 0
-        let warmTas = CruiseAdvisor.adjustedSettings(for: aircraft, conditions: warm).first?.adjustedTasKt ?? 0
+        let coldTas = CruiseAdvisor.adjustedSettings(for: aircraft, conditions: cold.snapshot).first?.adjustedTasKt ?? 0
+        let warmTas = CruiseAdvisor.adjustedSettings(for: aircraft, conditions: warm.snapshot).first?.adjustedTasKt ?? 0
         #expect(warmTas > coldTas)
     }
 }
