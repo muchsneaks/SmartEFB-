@@ -1,10 +1,14 @@
 import SwiftUI
 
-/// Lets the pilot browse the aircraft catalogue, select the active aircraft and
-/// drill into detailed reference data.
+/// Lets the pilot browse the aircraft catalogue, select the active aircraft,
+/// create their own aircraft and drill into detailed reference data.
 struct AircraftSelectionView: View {
     @Environment(AircraftStore.self) private var store
     @Environment(FlightConditions.self) private var conditions
+
+    @State private var showCreate = false
+    @State private var showSettings = false
+    @State private var aircraftToDelete: Aircraft?
 
     var body: some View {
         NavigationStack {
@@ -15,11 +19,45 @@ struct AircraftSelectionView: View {
                     }
                 }
                 .padding()
+                .animation(.snappy, value: store.aircraft)
             }
             .background(Theme.background)
             .navigationTitle("Flugzeug")
             .navigationDestination(for: Aircraft.self) { aircraft in
                 AircraftDetailView(aircraft: aircraft)
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Einstellungen", systemImage: "gearshape") {
+                        showSettings = true
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Flieger anlegen", systemImage: "plus") {
+                        showCreate = true
+                    }
+                }
+            }
+            .sheet(isPresented: $showCreate) {
+                CreateAircraftView()
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
+            }
+            .confirmationDialog(
+                "Diesen Flieger löschen?",
+                isPresented: .init(get: { aircraftToDelete != nil }, set: { if !$0 { aircraftToDelete = nil } }),
+                titleVisibility: .visible
+            ) {
+                Button("Löschen", role: .destructive) {
+                    if let aircraft = aircraftToDelete {
+                        store.deleteCustom(aircraft)
+                    }
+                    aircraftToDelete = nil
+                }
+                Button("Abbrechen", role: .cancel) { aircraftToDelete = nil }
+            } message: {
+                Text(aircraftToDelete?.name ?? "")
             }
         }
     }
@@ -37,14 +75,27 @@ struct AircraftSelectionView: View {
             }
             .buttonStyle(.plain)
 
-            NavigationLink(value: aircraft) {
-                Label("Details & Geschwindigkeiten", systemImage: "info.circle")
-                    .font(.subheadline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
+            HStack(spacing: 0) {
+                NavigationLink(value: aircraft) {
+                    Label("Details & Geschwindigkeiten", systemImage: "info.circle")
+                        .font(.subheadline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Theme.accent)
+
+                if aircraft.isCustom {
+                    Button(role: .destructive) {
+                        aircraftToDelete = aircraft
+                    } label: {
+                        Image(systemName: "trash")
+                            .padding()
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Theme.warning)
+                }
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(Theme.accent)
         }
         .background(
             (isSelected ? Theme.accent.opacity(0.12) : Color.white.opacity(0.05)),

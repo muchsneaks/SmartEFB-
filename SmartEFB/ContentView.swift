@@ -24,5 +24,6 @@ struct ContentView: View {
     ContentView()
         .environment(AircraftStore())
         .environment(FlightConditions())
+        .environment(APIKeyStore())
         .preferredColorScheme(.dark)
 }

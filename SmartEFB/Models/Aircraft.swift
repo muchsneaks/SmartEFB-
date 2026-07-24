@@ -25,6 +25,9 @@ struct Aircraft: Codable, Hashable, Identifiable {
     /// present and loadable, it is shown instead of the SF Symbol.
     var imageName: String? = nil
 
+    /// Whether this aircraft was created by the user (and can be deleted).
+    var isCustom: Bool = false
+
     /// Propeller / power-management type.
     var propType: PropType
 

@@ -13,9 +13,23 @@ Flugvorbereitung in der Allgemeinen Luftfahrt.
   Ladedruck/RPM bei Constant-Speed-Propellern), % Leistung, TAS und Verbrauch.
   Die zur aktuellen Druckhöhe passende Zeile wird hervorgehoben; TAS wird für
   die aktuelle Temperatur korrigiert.
-- **Flugzeugauswahl**: Vier hinterlegte Muster (Cessna 172S, Piper Archer III,
-  Diamond DA40 NG, Cirrus SR22) mit Detailansicht für Massen, Referenzstrecken
-  und Geschwindigkeiten.
+- **Flugzeugauswahl**: Hinterlegte Muster (Cessna 172S, Piper Archer III,
+  Diamond DA20, Diamond DA40 NG, Cirrus SR22) mit Detailansicht für Massen,
+  Referenzstrecken und Geschwindigkeiten.
+- **Eigene Flieger per KI anlegen**: Der Nutzer kann ein eigenes Flugzeug
+  erstellen und ein Foto der POH-Leistungstabelle (Start-/Landestrecken bzw.
+  Cruise-Settings) aufnehmen. Ein Vision-Modell (OpenAI GPT-4o) liest die Werte
+  aus, rechnet Einheiten um und plausibilisiert sie; das Ergebnis wird mit
+  Konfidenz und Warnhinweisen zur Kontrolle angezeigt und kann vor dem Speichern
+  korrigiert werden. Eigene Flieger werden lokal gespeichert.
+
+### OpenAI-API-Key & Sicherheit
+
+Die KI-Funktion benötigt einen eigenen OpenAI-API-Key. Dieser wird **einmalig in
+den App-Einstellungen** eingegeben und ausschließlich im **iOS-Schlüsselbund
+(Keychain)** gespeichert – **niemals im Code, in der Versionsverwaltung oder auf
+einem Server**. Ein versehentlich veröffentlichter Key sollte sofort im
+[OpenAI-Dashboard](https://platform.openai.com/api-keys) widerrufen werden.
 
 ## Bedienung unter Turbulenzen
 
