@@ -2,60 +2,62 @@ import SwiftUI
 import PhotosUI
 import UIKit
 
-/// The full flow for creating a custom aircraft, including AI import of POH
-/// performance data from a photo.
+/// A guided, step-by-step wizard for creating – or later editing – a custom
+/// aircraft, including AI import of POH performance data from a photo.
 struct CreateAircraftView: View {
     @Environment(AircraftStore.self) private var store
     @Environment(APIKeyStore.self) private var keyStore
     @Environment(\.dismiss) private var dismiss
 
-    @State private var vm = AircraftDraftViewModel()
+    @State private var vm: AircraftDraftViewModel
+    @State private var step: WizardStep
+    @State private var goingForward = true
+
     @State private var pickerItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var showCamera = false
     @State private var showSettings = false
 
-    private var hasImportedOrManualData: Bool {
-        vm.hasImportedData || vm.hasTakeoff || vm.hasLanding || !vm.cruiseSettings.isEmpty
+    /// Creates the wizard for a new aircraft, or pre-filled for editing.
+    init(editing aircraft: Aircraft? = nil) {
+        if let aircraft {
+            _vm = State(initialValue: AircraftDraftViewModel(editing: aircraft))
+            _step = State(initialValue: .review)
+        } else {
+            _vm = State(initialValue: AircraftDraftViewModel())
+            _step = State(initialValue: .identity)
+        }
     }
 
     var body: some View {
         NavigationStack {
-            Form {
-                DraftBasicsSection(vm: vm)
+            VStack(spacing: 0) {
+                WizardProgressBar(current: step)
+                WizardStepHeader(step: step)
+                    .id(step)
+                    .transition(.opacity)
 
-                POHImportSection(
-                    vm: vm,
-                    selectedImage: selectedImage,
-                    hasKey: keyStore.hasKey,
-                    pickerItem: $pickerItem,
-                    onTakePhoto: { showCamera = true },
-                    onOpenSettings: { showSettings = true }
-                )
-
-                if hasImportedOrManualData {
-                    PerformanceReviewSection(vm: vm)
-                }
+                stepContent
+                    .id(step)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: goingForward ? .trailing : .leading).combined(with: .opacity),
+                        removal: .move(edge: goingForward ? .leading : .trailing).combined(with: .opacity)
+                    ))
             }
-            .navigationTitle("Neuer Flieger")
+            .background(Theme.background)
+            .navigationTitle(vm.isEditing ? "Flieger bearbeiten" : "Neuer Flieger")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Abbrechen") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Sichern") {
-                        store.addCustom(vm.buildAircraft())
-                        dismiss()
-                    }
-                    .disabled(!vm.canSave)
-                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                navigationButtons
             }
             .sheet(isPresented: $showCamera) {
-                CameraPicker { image in
-                    startAnalysis(with: image)
-                }
-                .ignoresSafeArea()
+                CameraPicker { image in startAnalysis(with: image) }
+                    .ignoresSafeArea()
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView()
@@ -63,9 +65,103 @@ struct CreateAircraftView: View {
             .onChange(of: pickerItem) { _, newItem in
                 loadPickedImage(newItem)
             }
-            .animation(.snappy, value: vm.importState)
-            .animation(.snappy, value: hasImportedOrManualData)
+            .animation(.snappy, value: step)
         }
+    }
+
+    // MARK: - Step content
+
+    @ViewBuilder
+    private var stepContent: some View {
+        switch step {
+        case .identity:
+            IdentityStepView(vm: vm)
+        case .weights:
+            WeightsStepView(vm: vm)
+        case .performance:
+            PhotoStepView(
+                vm: vm,
+                selectedImage: selectedImage,
+                hasKey: keyStore.hasKey,
+                pickerItem: $pickerItem,
+                onTakePhoto: { showCamera = true },
+                onOpenSettings: { showSettings = true }
+            )
+        case .review:
+            ReviewStepView(vm: vm)
+        case .summary:
+            SummaryStepView(vm: vm)
+        }
+    }
+
+    // MARK: - Navigation bar
+
+    private var navigationButtons: some View {
+        HStack(spacing: 12) {
+            if step.previous != nil {
+                Button {
+                    goingForward = false
+                    if let previous = step.previous { step = previous }
+                } label: {
+                    Label("Zurück", systemImage: "chevron.left")
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 30)
+                }
+                .buttonStyle(.bordered)
+            }
+
+            if step == .summary {
+                Button {
+                    save()
+                } label: {
+                    Label(vm.isEditing ? "Aktualisieren" : "Speichern", systemImage: "checkmark")
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 30)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!vm.canSave)
+            } else {
+                Button {
+                    goingForward = true
+                    if let next = step.next { step = next }
+                } label: {
+                    Label("Weiter", systemImage: "chevron.right")
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 30)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!canAdvance)
+            }
+        }
+        .controlSize(.large)
+        .padding()
+        .background(.bar)
+    }
+
+    /// Whether the current step is complete enough to move on.
+    private var canAdvance: Bool {
+        switch step {
+        case .identity:
+            !vm.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .weights:
+            vm.maxTakeoffWeightKg > vm.emptyWeightKg
+        case .performance:
+            true
+        case .review:
+            vm.hasTakeoff || vm.hasLanding || !vm.cruiseSettings.isEmpty
+        case .summary:
+            true
+        }
+    }
+
+    private func save() {
+        let aircraft = vm.buildAircraft()
+        if vm.isEditing {
+            store.updateCustom(aircraft)
+        } else {
+            store.addCustom(aircraft)
+        }
+        dismiss()
     }
 
     // MARK: - Image handling

@@ -9,6 +9,7 @@ struct AircraftSelectionView: View {
     @State private var showCreate = false
     @State private var showSettings = false
     @State private var aircraftToDelete: Aircraft?
+    @State private var aircraftToEdit: Aircraft?
 
     var body: some View {
         NavigationStack {
@@ -40,6 +41,9 @@ struct AircraftSelectionView: View {
             }
             .sheet(isPresented: $showCreate) {
                 CreateAircraftView()
+            }
+            .sheet(item: $aircraftToEdit) { aircraft in
+                CreateAircraftView(editing: aircraft)
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView()
@@ -86,6 +90,15 @@ struct AircraftSelectionView: View {
                 .foregroundStyle(Theme.accent)
 
                 if aircraft.isCustom {
+                    Button {
+                        aircraftToEdit = aircraft
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .padding()
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Theme.accent)
+
                     Button(role: .destructive) {
                         aircraftToDelete = aircraft
                     } label: {

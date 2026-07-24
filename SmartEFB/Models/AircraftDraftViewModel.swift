@@ -45,6 +45,36 @@ final class AircraftDraftViewModel {
     var confidence: Double?
     var hasImportedData = false
 
+    /// The id of the aircraft being edited, or `nil` when creating a new one.
+    private(set) var editingAircraftID: UUID? = nil
+
+    /// Whether the flow is editing an existing aircraft.
+    var isEditing: Bool { editingAircraftID != nil }
+
+    // MARK: Init
+
+    init() {}
+
+    /// Pre-fills the draft from an existing aircraft for later correction.
+    init(editing aircraft: Aircraft) {
+        editingAircraftID = aircraft.id
+        name = aircraft.name
+        registration = aircraft.registration
+        icaoType = aircraft.icaoType == "USER" ? "" : aircraft.icaoType
+        propType = aircraft.propType
+        emptyWeightKg = aircraft.emptyWeightKg
+        maxTakeoffWeightKg = aircraft.maxTakeoffWeightKg
+        defaultPlanningWeightKg = aircraft.defaultPlanningWeightKg
+        takeoff = aircraft.takeoff
+        hasTakeoff = true
+        landing = aircraft.landing
+        hasLanding = true
+        cruiseSettings = aircraft.cruiseSettings
+        vSpeeds = aircraft.vSpeeds
+        hasVSpeeds = true
+        hasImportedData = true
+    }
+
     /// True when the draft has the minimum data needed to be saved.
     var canSave: Bool {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -114,6 +144,7 @@ final class AircraftDraftViewModel {
     func buildAircraft() -> Aircraft {
         let trimmedType = icaoType.trimmingCharacters(in: .whitespacesAndNewlines)
         return Aircraft(
+            id: editingAircraftID ?? UUID(),
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             registration: registration.trimmingCharacters(in: .whitespacesAndNewlines),
             icaoType: trimmedType.isEmpty ? "USER" : trimmedType.uppercased(),

@@ -41,6 +41,17 @@ final class AircraftStore {
         selected = new
     }
 
+    /// Updates an existing user-created aircraft in place and persists it.
+    func updateCustom(_ aircraft: Aircraft) {
+        guard aircraft.isCustom,
+              let index = custom.firstIndex(where: { $0.id == aircraft.id }) else { return }
+        custom[index] = aircraft
+        persist()
+        if selected.id == aircraft.id {
+            selected = aircraft
+        }
+    }
+
     /// Deletes a user-created aircraft. Built-in aircraft are ignored.
     func deleteCustom(_ aircraft: Aircraft) {
         guard aircraft.isCustom else { return }

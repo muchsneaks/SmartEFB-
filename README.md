@@ -16,12 +16,14 @@ Flugvorbereitung in der Allgemeinen Luftfahrt.
 - **Flugzeugauswahl**: Hinterlegte Muster (Cessna 172S, Piper Archer III,
   Diamond DA20, Diamond DA40 NG, Cirrus SR22) mit Detailansicht für Massen,
   Referenzstrecken und Geschwindigkeiten.
-- **Eigene Flieger per KI anlegen**: Der Nutzer kann ein eigenes Flugzeug
-  erstellen und ein Foto der POH-Leistungstabelle (Start-/Landestrecken bzw.
-  Cruise-Settings) aufnehmen. Ein Vision-Modell (OpenAI GPT-4o) liest die Werte
-  aus, rechnet Einheiten um und plausibilisiert sie; das Ergebnis wird mit
-  Konfidenz und Warnhinweisen zur Kontrolle angezeigt und kann vor dem Speichern
-  korrigiert werden. Eigene Flieger werden lokal gespeichert.
+- **Eigene Flieger per KI anlegen**: Ein geführter Schritt-für-Schritt-Assistent
+  (Basisdaten → Massen → POH-Foto → Prüfen → Speichern) mit Fortschrittsanzeige
+  führt durch die Erstellung. Ein Foto der POH-Leistungstabelle
+  (Start-/Landestrecken bzw. Cruise-Settings) wird von einem Vision-Modell
+  (OpenAI GPT-4o) ausgelesen, in einheitliche Einheiten umgerechnet und
+  plausibilisiert; das Ergebnis wird mit Konfidenz und Warnhinweisen angezeigt
+  und lässt sich vor dem Speichern korrigieren. Eigene Flieger werden lokal
+  gespeichert und können jederzeit wieder **bearbeitet** oder gelöscht werden.
 
 ### OpenAI-API-Key & Sicherheit
 
