@@ -65,6 +65,27 @@ Eingebbare Größen:
 Ausgegeben werden Rollstrecke, Strecke über 50 ft, die **erforderliche Strecke
 inklusive Zuschlag** und die Reserve gegenüber der Pistenlänge – farbcodiert.
 
+### Visuelle Bahnansicht
+
+Angelehnt an die Performance-Seiten von Verkehrsflugzeugen, aber aufgeräumter:
+die verfügbare Bahn wird maßstäblich dargestellt (Kennung, Länge, Oberfläche,
+Mittellinie, Schwellenmarkierungen), darauf eingezeichnet
+
+- der Punkt des **Abhebens bzw. Stillstands** (Rollstrecke),
+- die **erforderliche Strecke** über 50 ft inklusive Sicherheitszuschlag,
+- die verbleibende **Reserve** als grünes Band – oder, wenn die Bahn nicht
+  reicht, die **fehlende Strecke** als rot gestrichelter Überlauf hinter dem
+  Bahnende,
+- ein **Windindikator** mit Pfeil im bahnbezogenen Bezugssystem sowie Gegen-/
+  Rücken- und Seitenwindkomponente.
+
+Zusätzlich nennt die App – analog zum „Limitation“-Feld im Airbus-System – den
+**größten Zuschlag** (z. B. Grasbahn, Rückenwind, Neigung) und schlüsselt alle
+Korrekturen gegenüber dem reinen Tabellenwert auf.
+
+Auf iPad und im Querformat stehen Eingaben, Ergebnisse und Bahnansicht
+nebeneinander; auf dem iPhone stapeln sich dieselben Panels.
+
 ### Prop- & Cruise-Settings
 
 Leistungstabellen je Flugzeug mit RPM (bzw. Ladedruck/RPM bei

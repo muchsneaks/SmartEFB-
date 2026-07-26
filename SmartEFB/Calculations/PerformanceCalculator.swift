@@ -26,7 +26,21 @@ struct PerformanceResult: Hashable, Sendable {
     /// Notes the pilot must be aware of, e.g. clamped chart inputs.
     var warnings: [String]
 
+    /// The named corrections applied to the raw chart value.
+    var factors: [PerformanceFactor]
+
     var fitsOnRunway: Bool { marginM >= 0 }
+
+    /// The single largest penalty, shown as the limiting influence.
+    var dominantPenalty: PerformanceFactor? {
+        factors.filter(\.isPenalty).max { $0.multiplier < $1.multiplier }
+    }
+
+    /// The distance straight off the chart, before any correction.
+    var chartDistanceM: Double {
+        let product = factors.reduce(1.0) { $0 * $1.multiplier }
+        return product == 0 ? distanceOver50ftM : distanceOver50ftM / product
+    }
 }
 
 /// Computes take-off and landing distances from an aircraft's POH chart.
@@ -82,12 +96,13 @@ enum PerformanceCalculator {
             "\($0) liegt außerhalb der Tabelle – es wurde der Randwert verwendet (nicht extrapoliert)."
         }
 
-        let factor = correctionFactor(
+        let factors = correctionBreakdown(
             corrections: table.corrections,
             conditions: conditions,
             headwindKt: wind.headwind,
             isLanding: isLanding
         )
+        let factor = factors.reduce(1.0) { $0 * $1.multiplier }
 
         if wind.headwind < 0 {
             warnings.append("Rückenwindkomponente – Strecke deutlich verlängert. Startrichtung prüfen.")
@@ -108,7 +123,8 @@ enum PerformanceCalculator {
             crosswindKt: wind.crosswind,
             crosswindFromLeft: wind.crosswindFromLeft,
             marginM: conditions.runwayLengthM - required,
-            warnings: warnings
+            warnings: warnings,
+            factors: factors
         )
     }
 
@@ -119,23 +135,52 @@ enum PerformanceCalculator {
         headwindKt: Double,
         isLanding: Bool
     ) -> Double {
+        correctionBreakdown(
+            corrections: corrections,
+            conditions: conditions,
+            headwindKt: headwindKt,
+            isLanding: isLanding
+        )
+        .reduce(1.0) { $0 * $1.multiplier }
+    }
+
+    /// The individual correction factors, named for display.
+    static func correctionBreakdown(
+        corrections: PerformanceCorrections,
+        conditions: ConditionsSnapshot,
+        headwindKt: Double,
+        isLanding: Bool
+    ) -> [PerformanceFactor] {
+        var factors: [PerformanceFactor] = []
+
         // Wind: headwind shortens, tailwind lengthens. Floored so an extreme
         // headwind can never collapse the distance to an unrealistic value.
-        let windFactor: Double
         if headwindKt >= 0 {
-            windFactor = max(0.5, 1 + corrections.headwindPerKt * headwindKt)
+            factors.append(PerformanceFactor(
+                name: "Gegenwind",
+                multiplier: max(0.5, 1 + corrections.headwindPerKt * headwindKt)
+            ))
         } else {
-            windFactor = 1 + corrections.tailwindPerKt * (-headwindKt)
+            factors.append(PerformanceFactor(
+                name: "Rückenwind",
+                multiplier: 1 + corrections.tailwindPerKt * (-headwindKt)
+            ))
         }
 
         // Slope: uphill penalises take-off, downhill penalises landing.
         let slopeSign: Double = isLanding ? -1 : 1
-        let slopeFactor = max(0.7, 1 + slopeSign * corrections.slopePerPercent * conditions.runwaySlopePercent)
+        factors.append(PerformanceFactor(
+            name: "Neigung",
+            multiplier: max(0.7, 1 + slopeSign * corrections.slopePerPercent * conditions.runwaySlopePercent)
+        ))
 
-        var surfaceFactor = 1.0
-        if conditions.surface == .grass { surfaceFactor *= corrections.grassFactor }
-        if conditions.runwayCondition == .wet { surfaceFactor *= corrections.wetFactor }
+        if conditions.surface == .grass {
+            factors.append(PerformanceFactor(name: "Grasbahn", multiplier: corrections.grassFactor))
+        }
+        if conditions.runwayCondition == .wet {
+            factors.append(PerformanceFactor(name: "Nasse Bahn", multiplier: corrections.wetFactor))
+        }
 
-        return windFactor * slopeFactor * surfaceFactor
+        return factors
     }
 }

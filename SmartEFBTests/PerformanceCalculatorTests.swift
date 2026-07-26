@@ -134,6 +134,63 @@ struct PerformanceCalculatorTests {
         #expect(result.marginM < 0)
     }
 
+    // MARK: Correction breakdown
+
+    @Test func breakdownNamesTheDominantPenalty() throws {
+        let conditions = referenceConditions()
+        conditions.surface = .grass
+        conditions.runwaySlopePercent = 1
+
+        let result = try #require(PerformanceCalculator.takeoff(aircraft: aircraft(), conditions: conditions.snapshot))
+        // Grass costs 15 %, a 1 % upslope only 7 %.
+        #expect(result.dominantPenalty?.name == "Grasbahn")
+    }
+
+    @Test func noDominantPenaltyAtReferenceConditions() throws {
+        let result = try #require(PerformanceCalculator.takeoff(aircraft: aircraft(), conditions: referenceConditions().snapshot))
+        #expect(result.dominantPenalty == nil)
+    }
+
+    @Test func headwindIsReportedAsABenefit() throws {
+        let conditions = referenceConditions()
+        conditions.runwayHeadingDeg = 250
+        conditions.windDirectionDeg = 250
+        conditions.windSpeedKt = 10
+
+        let result = try #require(PerformanceCalculator.takeoff(aircraft: aircraft(), conditions: conditions.snapshot))
+        let wind = try #require(result.factors.first { $0.name == "Gegenwind" })
+        #expect(wind.isBenefit)
+        #expect(result.dominantPenalty == nil)
+    }
+
+    @Test func factorsMultiplyBackToTheChartValue() throws {
+        let conditions = referenceConditions()
+        conditions.surface = .grass
+        conditions.runwaySlopePercent = 2
+
+        let result = try #require(PerformanceCalculator.takeoff(aircraft: aircraft(), conditions: conditions.snapshot))
+        // The chart itself reads 500 m at these atmospheric conditions.
+        #expect(abs(result.chartDistanceM - 500) < 0.01)
+    }
+
+    @Test func breakdownProductEqualsTheCombinedFactor() {
+        let conditions = referenceConditions()
+        conditions.surface = .grass
+        conditions.runwayCondition = .wet
+        conditions.runwaySlopePercent = 1.5
+
+        let breakdown = PerformanceCalculator.correctionBreakdown(
+            corrections: .landingDefaults, conditions: conditions.snapshot,
+            headwindKt: -5, isLanding: true
+        )
+        let combined = PerformanceCalculator.correctionFactor(
+            corrections: .landingDefaults, conditions: conditions.snapshot,
+            headwindKt: -5, isLanding: true
+        )
+        let product = breakdown.reduce(1.0) { $0 * $1.multiplier }
+        #expect(abs(product - combined) < 0.000001)
+    }
+
     @Test func warnsWhenTheChartHadToBeClamped() throws {
         let conditions = referenceConditions()
         conditions.fieldElevationFt = 12000

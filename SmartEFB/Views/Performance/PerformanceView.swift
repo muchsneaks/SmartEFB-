@@ -20,11 +20,17 @@ struct PerformanceView: View {
     }
 }
 
-/// The scrollable calculation content for one selected aircraft.
+/// The calculation for one selected aircraft.
+///
+/// On a wide screen the layout follows an airliner performance page — inputs,
+/// results and the runway view side by side. On a phone the same panels stack,
+/// with the runway view directly under the phase selector where it is most useful.
 private struct PerformanceContentView: View {
     let aircraft: Aircraft
 
     @Environment(FlightConditions.self) private var conditions
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     @State private var mode: PerformanceMode = .takeoff
 
     private var result: PerformanceResult? {
@@ -36,56 +42,109 @@ private struct PerformanceContentView: View {
         }
     }
 
-    /// A safe stepper range even if the stored weights are inconsistent.
-    private var weightRange: ClosedRange<Double> {
-        let lower = min(aircraft.emptyWeightKg, aircraft.maxTakeoffWeightKg)
-        let upper = max(aircraft.emptyWeightKg, aircraft.maxTakeoffWeightKg)
-        return lower < upper ? lower...upper : lower...(lower + 1)
-    }
+    private var isWide: Bool { horizontalSizeClass == .regular }
 
     var body: some View {
-        @Bindable var conditions = conditions
+        VStack(spacing: 0) {
+            modeSelector
 
-        ScrollView {
-            VStack(spacing: 16) {
-                AircraftHeaderView(aircraft: aircraft)
-
-                Picker("Modus", selection: $mode) {
-                    ForEach(PerformanceMode.allCases) { mode in
-                        Label(mode.displayName, systemImage: mode.symbolName).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .controlSize(.large)
-
-                SectionCard(title: "Beladung", systemImage: "scalemass") {
-                    BigStepper(title: "Masse", systemImage: "scalemass",
-                               value: $conditions.weightKg,
-                               range: weightRange,
-                               step: 5,
-                               unit: "kg (MTOM \(Int(aircraft.maxTakeoffWeightKg)) kg)")
-                }
-
-                if let result {
-                    PerformanceResultView(result: result)
-                } else {
-                    MissingDataView(
-                        title: mode == .takeoff ? "Keine Startdaten" : "Keine Landedaten",
-                        message: "Für dieses Flugzeug ist noch keine passende Tabelle hinterlegt. Bearbeite das Flugzeug und importiere die entsprechende POH-Seite."
-                    )
-                    .padding(.vertical)
-                }
-
-                ConditionsInputView()
-
-                DisclaimerView()
+            if isWide {
+                wideLayout
+            } else {
+                compactLayout
             }
-            .padding()
-            .animation(.snappy, value: mode)
         }
+        .animation(.snappy, value: mode)
         .onAppear { conditions.syncWeight(to: aircraft) }
         .onChange(of: aircraft) { _, newValue in
             conditions.syncWeight(to: newValue)
         }
+    }
+
+    // MARK: Phase selector
+
+    private var modeSelector: some View {
+        Picker("Modus", selection: $mode) {
+            ForEach(PerformanceMode.allCases) { mode in
+                Label(mode.displayName, systemImage: mode.symbolName).tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
+        .controlSize(.large)
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(.bar)
+    }
+
+    // MARK: Layouts
+
+    private var compactLayout: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                diagramOrPlaceholder
+
+                if let result {
+                    PerformanceResultsPanel(result: result, mode: mode, vSpeeds: aircraft.vSpeeds)
+                }
+
+                PerformanceInputsColumn(aircraft: aircraft)
+            }
+            .padding()
+        }
+    }
+
+    private var wideLayout: some View {
+        HStack(alignment: .top, spacing: 16) {
+            ScrollView {
+                PerformanceInputsColumn(aircraft: aircraft)
+                    .padding(.vertical)
+            }
+            .frame(maxWidth: 380)
+
+            ScrollView {
+                Group {
+                    if let result {
+                        PerformanceResultsPanel(result: result, mode: mode, vSpeeds: aircraft.vSpeeds)
+                    } else {
+                        missingData
+                    }
+                }
+                .padding(.vertical)
+            }
+
+            ScrollView {
+                diagramOrPlaceholder
+                    .padding(.vertical)
+            }
+            .frame(maxWidth: 300)
+        }
+        .padding(.horizontal)
+    }
+
+    // MARK: Pieces
+
+    @ViewBuilder
+    private var diagramOrPlaceholder: some View {
+        if let result {
+            RunwayDiagramView(
+                result: result,
+                mode: mode,
+                runwayLengthM: conditions.runwayLengthM,
+                runwayHeadingDeg: conditions.runwayHeadingDeg,
+                surface: conditions.surface,
+                windDirectionDeg: conditions.windDirectionDeg,
+                windSpeedKt: conditions.windSpeedKt
+            )
+        } else if !isWide {
+            missingData
+        }
+    }
+
+    private var missingData: some View {
+        MissingDataView(
+            title: mode == .takeoff ? "Keine Startdaten" : "Keine Landedaten",
+            message: "Für dieses Flugzeug ist noch keine passende Tabelle hinterlegt. Bearbeite das Flugzeug und importiere die entsprechende POH-Seite."
+        )
+        .padding(.vertical)
     }
 }
