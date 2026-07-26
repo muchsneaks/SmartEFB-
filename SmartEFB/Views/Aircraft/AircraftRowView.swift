@@ -19,8 +19,18 @@ struct AircraftRowView: View {
                 .frame(width: Theme.controlSize, height: Theme.controlSize)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(aircraft.name)
-                    .font(.headline)
+                HStack(spacing: 6) {
+                    Text(aircraft.name)
+                        .font(.headline)
+                    if aircraft.id == DemoAircraft.id {
+                        Text("BEISPIEL")
+                            .font(.caption2.weight(.heavy))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Theme.caution.opacity(0.22), in: .capsule)
+                            .foregroundStyle(Theme.caution)
+                    }
+                }
                 Text(summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)

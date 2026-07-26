@@ -14,10 +14,14 @@ final class AircraftStore {
     /// The currently selected aircraft, or `nil` while none exists.
     var selected: Aircraft?
 
-    init(aircraft: [Aircraft]? = nil) {
+    /// Set to `false` in tests so they never write over the pilot's saved aircraft.
+    private let persistsChanges: Bool
+
+    init(aircraft: [Aircraft]? = nil, persistsChanges: Bool = true) {
         let loaded = aircraft ?? AircraftPersistence.load()
         self.aircraft = loaded
         self.selected = loaded.first
+        self.persistsChanges = persistsChanges
     }
 
     var isEmpty: Bool { aircraft.isEmpty }
@@ -32,6 +36,21 @@ final class AircraftStore {
         self.aircraft.append(aircraft)
         persist()
         selected = aircraft
+    }
+
+    /// Whether the bundled example aircraft is already present.
+    var hasDemoAircraft: Bool {
+        aircraft.contains { $0.id == DemoAircraft.id }
+    }
+
+    /// Adds the example aircraft so the app can be tried out, or just selects it if
+    /// it was loaded before. Never creates a duplicate.
+    func loadDemoAircraft() {
+        if let existing = aircraft.first(where: { $0.id == DemoAircraft.id }) {
+            selected = existing
+        } else {
+            add(DemoAircraft.make())
+        }
     }
 
     /// Replaces an existing aircraft, keeping its position in the list.
@@ -54,6 +73,7 @@ final class AircraftStore {
     }
 
     private func persist() {
+        guard persistsChanges else { return }
         AircraftPersistence.save(aircraft)
     }
 }

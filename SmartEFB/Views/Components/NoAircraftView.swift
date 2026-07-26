@@ -7,6 +7,9 @@ struct NoAircraftView: View {
     /// the explanatory text is shown (e.g. on the calculation tabs).
     var onCreate: (() -> Void)?
 
+    /// Called to load the bundled example aircraft for a first look around.
+    var onLoadDemo: (() -> Void)?
+
     var body: some View {
         ContentUnavailableView {
             Label("Noch kein Flugzeug", systemImage: "airplane.circle")
@@ -14,11 +17,26 @@ struct NoAircraftView: View {
             Text("Lege dein Flugzeug an und übernimm die Leistungsdaten aus dem Flughandbuch – per Foto oder von Hand.")
         } actions: {
             if let onCreate {
-                Button("Flugzeug anlegen", systemImage: "plus") {
-                    onCreate()
+                VStack(spacing: 12) {
+                    Button("Flugzeug anlegen", systemImage: "plus") {
+                        onCreate()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+
+                    if let onLoadDemo {
+                        Button("Beispielflieger laden", systemImage: "sparkles") {
+                            onLoadDemo()
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+
+                        Text("Zum Ausprobieren – enthält erfundene Beispielwerte, nicht für echte Flüge.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
             } else {
                 Text("Im Tab „Flugzeug“ anlegen.")
                     .font(.footnote)

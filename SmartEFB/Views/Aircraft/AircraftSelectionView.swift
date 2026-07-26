@@ -28,7 +28,10 @@ struct AircraftSelectionView: View {
         NavigationStack {
             Group {
                 if store.isEmpty {
-                    NoAircraftView { destination = .create }
+                    NoAircraftView(
+                        onCreate: { destination = .create },
+                        onLoadDemo: { loadDemo() }
+                    )
                 } else {
                     list
                 }
@@ -43,7 +46,16 @@ struct AircraftSelectionView: View {
                     Button("Einstellungen", systemImage: "gearshape") { destination = .settings }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Flugzeug anlegen", systemImage: "plus") { destination = .create }
+                    Menu {
+                        Button("Flugzeug anlegen", systemImage: "plus") { destination = .create }
+                        if !store.hasDemoAircraft {
+                            Button("Beispielflieger laden", systemImage: "sparkles") {
+                                loadDemo()
+                            }
+                        }
+                    } label: {
+                        Label("Hinzufügen", systemImage: "plus")
+                    }
                 }
             }
             .sheet(item: $destination) { destination in
@@ -74,6 +86,14 @@ struct AircraftSelectionView: View {
             } message: {
                 Text(aircraftToDelete?.name ?? "")
             }
+        }
+    }
+
+    /// Loads the example aircraft and aligns the planning weight with it.
+    private func loadDemo() {
+        withAnimation(.snappy) {
+            store.loadDemoAircraft()
+            conditions.syncWeight(to: store.selected)
         }
     }
 

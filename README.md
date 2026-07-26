@@ -9,6 +9,17 @@ Werten gerechnet, die der Pilot nicht selbst hinterlegt hat.
 
 ## Funktionen
 
+### Beispielflieger zum Ausprobieren
+
+Damit die App auch ohne eigene Handbuchdaten erlebbar ist, lässt sich ein
+**Beispielflieger** mit einem Tippen laden (im leeren Zustand oder über das
+Plus-Menü). Er enthält vollständige Start-, Lande- und Cruise-Daten, sodass alle
+Funktionen inklusive Bahnansicht sofort funktionieren.
+
+Die Werte sind **erfundene Demonstrationsdaten** eines generischen Musters – sie
+sind bewusst keinem echten Flugzeugtyp zugeordnet und in der Liste mit
+`BEISPIEL` markiert. Sie eignen sich zum Testen, **nicht für echte Flüge**.
+
 ### Eigene Flugzeuge anlegen (geführter Assistent)
 
 Ein Schritt-für-Schritt-Assistent mit Fortschrittsanzeige führt durch die
