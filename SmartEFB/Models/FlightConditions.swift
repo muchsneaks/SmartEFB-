@@ -1,19 +1,18 @@
 import Foundation
 import Observation
 
-/// Shared, observable environmental and runway conditions used across the
-/// performance and cruise screens.
+/// Shared, observable environmental, runway and loading conditions used across
+/// the performance and cruise screens.
 ///
 /// A single instance is owned by the app and injected into the environment so
-/// that entering conditions once (e.g. on the ground before departure) is
-/// reflected everywhere.
+/// that entering the conditions once is reflected everywhere.
 @MainActor
 @Observable
 final class FlightConditions {
     // MARK: Atmosphere
 
     /// Airfield elevation in feet above mean sea level.
-    var fieldElevationFt: Double = 1200
+    var fieldElevationFt: Double = 1000
 
     /// Altimeter setting (QNH) in hectopascals.
     var qnhHpa: Double = 1013
@@ -23,7 +22,7 @@ final class FlightConditions {
 
     // MARK: Wind
 
-    /// Direction the wind is coming *from*, in degrees true.
+    /// Direction the wind is coming *from*, in degrees.
     var windDirectionDeg: Double = 270
 
     /// Wind speed in knots.
@@ -31,7 +30,7 @@ final class FlightConditions {
 
     // MARK: Runway
 
-    /// Runway magnetic heading in degrees (direction of travel).
+    /// Runway heading in degrees (direction of travel).
     var runwayHeadingDeg: Double = 250
 
     /// Usable runway length in metres, used to show the safety margin.
@@ -43,10 +42,14 @@ final class FlightConditions {
     var surface: RunwaySurface = .paved
     var runwayCondition: RunwayCondition = .dry
 
-    // MARK: Aircraft loading
+    // MARK: Loading & safety
 
-    /// Planned take-off / landing weight in kilograms.
-    var weightKg: Double = 1000
+    /// Planned take-off / landing mass in kilograms.
+    var weightKg: Double = 900
+
+    /// Additional safety margin applied to the required distance, in percent.
+    /// Many operators and clubs require a fixed factor (e.g. 15 % or 43 %).
+    var safetyFactorPercent: Double = 0
 
     /// An immutable, `Sendable` copy for use by the pure calculators.
     var snapshot: ConditionsSnapshot {
@@ -61,13 +64,15 @@ final class FlightConditions {
             runwaySlopePercent: runwaySlopePercent,
             surface: surface,
             runwayCondition: runwayCondition,
-            weightKg: weightKg
+            weightKg: weightKg,
+            safetyFactorPercent: safetyFactorPercent
         )
     }
 
-    /// Aligns the mutable weight with the currently selected aircraft, clamping
-    /// it to the aircraft's maximum take-off weight.
-    func syncWeight(to aircraft: Aircraft) {
+    /// Aligns the planning weight with the selected aircraft, resetting it to
+    /// that aircraft's default when it falls outside its usable range.
+    func syncWeight(to aircraft: Aircraft?) {
+        guard let aircraft else { return }
         if weightKg > aircraft.maxTakeoffWeightKg || weightKg < aircraft.emptyWeightKg {
             weightKg = aircraft.defaultPlanningWeightKg
         }

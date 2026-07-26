@@ -66,6 +66,18 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Picker("Modell", selection: $keyStore.model) {
+                        ForEach(APIKeyStore.availableModels, id: \.self) { model in
+                            Text(model).tag(model)
+                        }
+                    }
+                } header: {
+                    Text("KI-Modell")
+                } footer: {
+                    Text("Wird zum Auslesen der POH-Seiten verwendet. Das Modell muss Bilder verarbeiten können.")
+                }
+
+                Section {
                     Label {
                         Text("Der Key erlaubt kostenpflichtige Anfragen an OpenAI. Teile ihn mit niemandem. Wurde er versehentlich veröffentlicht, widerrufe ihn im OpenAI-Dashboard und erstelle einen neuen.")
                     } icon: {

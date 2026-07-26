@@ -1,9 +1,30 @@
 import SwiftUI
 
-/// Shows cruise / power settings for the selected aircraft, highlighting the
-/// row that best matches the current pressure altitude.
+/// Shows cruise / power settings for the selected aircraft.
 struct PropSettingsView: View {
     @Environment(AircraftStore.self) private var store
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let aircraft = store.selected {
+                    PropSettingsContentView(aircraft: aircraft)
+                } else {
+                    NoAircraftView()
+                }
+            }
+            .background(Theme.background)
+            .navigationTitle("Prop & Cruise")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+/// The cruise table for one selected aircraft, highlighting the row that best
+/// matches the current pressure altitude.
+private struct PropSettingsContentView: View {
+    let aircraft: Aircraft
+
     @Environment(FlightConditions.self) private var conditions
 
     private var pressureAltitude: Double {
@@ -13,73 +34,75 @@ struct PropSettingsView: View {
         )
     }
 
-    private var adjustedSettings: [AdjustedCruiseSetting] {
-        CruiseAdvisor.adjustedSettings(for: store.selected, conditions: conditions.snapshot)
+    private var settings: [AdjustedCruiseSetting] {
+        CruiseAdvisor.adjustedSettings(for: aircraft, conditions: conditions.snapshot)
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    AircraftHeaderView(aircraft: store.selected)
+        ScrollView {
+            VStack(spacing: 16) {
+                AircraftHeaderView(aircraft: aircraft)
 
-                    currentConditionsCard
+                HStack(spacing: 12) {
+                    ResultTile(title: "Druckhöhe", value: pressureAltitude,
+                               unit: "ft", tint: Theme.accent)
+                    ResultTile(title: "OAT", value: conditions.temperatureC,
+                               format: .number.precision(.fractionLength(0)),
+                               unit: "°C", tint: Theme.accent)
+                }
 
-                    SectionCard(title: "Leistungseinstellungen (\(store.selected.propType.displayName))",
+                if settings.isEmpty {
+                    MissingDataView(
+                        title: "Keine Cruise-Daten",
+                        message: "Für dieses Flugzeug ist noch keine Leistungstabelle hinterlegt. Bearbeite das Flugzeug und importiere die Cruise-Seite aus dem POH."
+                    )
+                    .padding(.vertical)
+                } else {
+                    SectionCard(title: "Leistungseinstellungen (\(aircraft.propType.displayName))",
                                 systemImage: "gauge.with.dots.needle.67percent") {
                         VStack(spacing: 4) {
-                            ForEach(adjustedSettings) { setting in
-                                CruiseSettingRowView(setting: setting, propType: store.selected.propType)
-                                if setting.id != adjustedSettings.last?.id {
+                            ForEach(settings) { setting in
+                                CruiseSettingRowView(setting: setting, propType: aircraft.propType)
+                                if setting.id != settings.last?.id {
                                     Divider()
                                 }
                             }
                         }
                     }
 
-                    recommendationCard
-
-                    DisclaimerView()
+                    RecommendationCard(settings: settings, propType: aircraft.propType)
                 }
-                .padding()
+
+                DisclaimerView()
             }
-            .background(Theme.background)
-            .navigationTitle("Prop & Cruise")
-            .navigationBarTitleDisplayMode(.inline)
+            .padding()
         }
     }
+}
 
-    private var currentConditionsCard: some View {
-        HStack(spacing: 12) {
-            ResultTile(title: "Druckhöhe", value: pressureAltitude, unit: "ft", tint: Theme.accent)
-            ResultTile(title: "OAT", value: conditions.temperatureC,
-                       format: .number.precision(.fractionLength(0)), unit: "°C", tint: Theme.accent)
-        }
-    }
+/// Highlights the single power setting closest to the current pressure altitude.
+private struct RecommendationCard: View {
+    let settings: [AdjustedCruiseSetting]
+    let propType: PropType
 
-    @ViewBuilder
-    private var recommendationCard: some View {
-        if let recommended = adjustedSettings.first(where: { $0.isRecommended }) {
+    var body: some View {
+        if let recommended = settings.first(where: { $0.isRecommended }) {
             SectionCard(title: "Empfehlung für aktuelle Höhe", systemImage: "star.fill") {
                 VStack(alignment: .leading, spacing: 8) {
-                    if store.selected.propType == .constantSpeed,
-                       let mp = recommended.base.manifoldPressureInHg {
-                        recommendationRow("Ladedruck / Drehzahl",
-                                          "\(Int(mp.rounded()))\" · \(recommended.base.rpm) RPM")
+                    if propType == .constantSpeed, let mp = recommended.base.manifoldPressureInHg {
+                        row("Ladedruck / Drehzahl", "\(Int(mp.rounded()))\" · \(recommended.base.rpm) RPM")
                     } else {
-                        recommendationRow("Drehzahl", "\(recommended.base.rpm) RPM")
+                        row("Drehzahl", "\(recommended.base.rpm) RPM")
                     }
-                    recommendationRow("Leistung", "\(recommended.base.percentPower) %")
-                    recommendationRow("TAS (korrigiert)",
-                                      "\(Int(recommended.adjustedTasKt.rounded())) kt")
-                    recommendationRow("Verbrauch",
-                                      "\(Int(recommended.base.fuelFlowLph.rounded())) l/h")
+                    row("Leistung", "\(recommended.base.percentPower) %")
+                    row("TAS (korrigiert)", "\(Int(recommended.adjustedTasKt.rounded())) kt")
+                    row("Verbrauch", "\(Int(recommended.base.fuelFlowLph.rounded())) l/h")
                 }
             }
         }
     }
 
-    private func recommendationRow(_ title: LocalizedStringKey, _ value: String) -> some View {
+    private func row(_ title: LocalizedStringKey, _ value: String) -> some View {
         HStack {
             Text(title)
                 .foregroundStyle(.secondary)

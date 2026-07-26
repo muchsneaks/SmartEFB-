@@ -15,8 +15,15 @@ struct CreateAircraftView: View {
 
     @State private var pickerItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
-    @State private var showCamera = false
-    @State private var showSettings = false
+
+    /// Presenting several `.sheet` modifiers from one view is unreliable, so both
+    /// sheets are driven by this single value.
+    private enum Destination: String, Identifiable {
+        case camera, settings
+        var id: String { rawValue }
+    }
+
+    @State private var destination: Destination?
 
     /// Creates the wizard for a new aircraft, or pre-filled for editing.
     init(editing aircraft: Aircraft? = nil) {
@@ -55,12 +62,14 @@ struct CreateAircraftView: View {
             .safeAreaInset(edge: .bottom) {
                 navigationButtons
             }
-            .sheet(isPresented: $showCamera) {
-                CameraPicker { image in startAnalysis(with: image) }
-                    .ignoresSafeArea()
-            }
-            .sheet(isPresented: $showSettings) {
-                SettingsView()
+            .sheet(item: $destination) { destination in
+                switch destination {
+                case .camera:
+                    CameraPicker { image in startAnalysis(with: image) }
+                        .ignoresSafeArea()
+                case .settings:
+                    SettingsView()
+                }
             }
             .onChange(of: pickerItem) { _, newItem in
                 loadPickedImage(newItem)
@@ -84,8 +93,8 @@ struct CreateAircraftView: View {
                 selectedImage: selectedImage,
                 hasKey: keyStore.hasKey,
                 pickerItem: $pickerItem,
-                onTakePhoto: { showCamera = true },
-                onOpenSettings: { showSettings = true }
+                onTakePhoto: { destination = .camera },
+                onOpenSettings: { destination = .settings }
             )
         case .review:
             ReviewStepView(vm: vm)
@@ -148,7 +157,7 @@ struct CreateAircraftView: View {
         case .performance:
             true
         case .review:
-            vm.hasTakeoff || vm.hasLanding || !vm.cruiseSettings.isEmpty
+            vm.hasAnyPerformanceData
         case .summary:
             true
         }
@@ -157,9 +166,9 @@ struct CreateAircraftView: View {
     private func save() {
         let aircraft = vm.buildAircraft()
         if vm.isEditing {
-            store.updateCustom(aircraft)
+            store.update(aircraft)
         } else {
-            store.addCustom(aircraft)
+            store.add(aircraft)
         }
         dismiss()
     }
@@ -183,7 +192,12 @@ struct CreateAircraftView: View {
             return
         }
         Task {
-            await vm.analyze(imageData: data, mimeType: "image/jpeg", apiKey: keyStore.trimmedKey)
+            await vm.analyze(
+                imageData: data,
+                mimeType: "image/jpeg",
+                apiKey: keyStore.trimmedKey,
+                model: keyStore.model
+            )
         }
     }
 }

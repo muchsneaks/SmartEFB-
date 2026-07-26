@@ -9,23 +9,39 @@ struct SummaryStepView: View {
             Section("Flugzeug") {
                 row("Name", vm.name.isEmpty ? "–" : vm.name)
                 row("Kennung", vm.registration.isEmpty ? "–" : vm.registration)
+                row("Typ", vm.icaoType.isEmpty ? "–" : vm.icaoType.uppercased())
                 row("Antrieb", vm.propType.displayName)
             }
 
             Section("Massen") {
                 row("Leermasse", "\(Int(vm.emptyWeightKg)) kg")
                 row("MTOM", "\(Int(vm.maxTakeoffWeightKg)) kg")
+                row("Planungsmasse", "\(Int(vm.defaultPlanningWeightKg)) kg")
             }
 
             Section("Leistungsdaten") {
-                statusRow("Startstrecke", available: vm.hasTakeoff)
-                statusRow("Landestrecke", available: vm.hasLanding)
-                row("Cruise-Zeilen", "\(vm.cruiseSettings.count)")
+                countRow("Startstrecken", count: vm.takeoffPoints.count, unit: "Stützpunkte")
+                countRow("Landestrecken", count: vm.landingPoints.count, unit: "Stützpunkte")
+                countRow("Cruise", count: vm.cruiseSettings.count, unit: "Zeilen")
             }
 
-            if !vm.canSave {
-                Section {
-                    Label("Es fehlen noch Angaben (Name, gültige Massen und mindestens Start-/Lande- oder Cruise-Daten).", systemImage: "exclamationmark.triangle")
+            if let verification = vm.verification {
+                Section("Gegenrechnung") {
+                    VerificationCard(outcome: verification)
+                        .listRowInsets(EdgeInsets())
+                        .padding(.vertical, 4)
+                }
+            }
+
+            Section {
+                Label("Alle Werte stammen aus deinem Flughandbuch und sollten vor dem ersten Einsatz noch einmal gegen das POH geprüft werden.",
+                      systemImage: "exclamationmark.shield")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                if !vm.canSave {
+                    Label("Es fehlen noch Angaben: Name, gültige Massen und mindestens eine Start-, Lande- oder Cruise-Tabelle.",
+                          systemImage: "exclamationmark.triangle")
                         .font(.footnote)
                         .foregroundStyle(Theme.caution)
                 }
@@ -43,16 +59,20 @@ struct SummaryStepView: View {
         }
     }
 
-    private func statusRow(_ title: LocalizedStringKey, available: Bool) -> some View {
+    private func countRow(_ title: LocalizedStringKey, count: Int, unit: String) -> some View {
         HStack {
             Text(title)
                 .foregroundStyle(.secondary)
             Spacer()
-            Label(available ? "vorhanden" : "fehlt",
-                  systemImage: available ? "checkmark.circle.fill" : "minus.circle")
-                .labelStyle(.titleAndIcon)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(available ? Theme.positive : .secondary)
+            if count > 0 {
+                Label("\(count) \(unit)", systemImage: "checkmark.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.positive)
+            } else {
+                Label("fehlt", systemImage: "minus.circle")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }

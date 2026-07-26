@@ -20,4 +20,5 @@ struct ConditionsSnapshot: Sendable, Hashable {
     var runwayCondition: RunwayCondition
 
     var weightKg: Double
+    var safetyFactorPercent: Double
 }

@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// Editable input for the shared atmospheric, wind and runway conditions.
+/// Editable input for every quantity that influences the take-off and landing
+/// distance calculation.
 ///
-/// Uses ``BigStepper`` controls throughout so values can be adjusted with
-/// large tap targets under turbulence.
+/// Uses ``BigStepper`` controls throughout so values can be adjusted with large
+/// tap targets under turbulence.
 struct ConditionsInputView: View {
     @Environment(FlightConditions.self) private var conditions
 
@@ -13,20 +14,20 @@ struct ConditionsInputView: View {
         VStack(spacing: 16) {
             SectionCard(title: "Atmosphäre", systemImage: "thermometer.medium") {
                 BigStepper(title: "Platzhöhe", systemImage: "mountain.2",
-                           value: $conditions.fieldElevationFt, range: -1000...15000, step: 100,
+                           value: $conditions.fieldElevationFt, range: -1000...15000, step: 50,
                            unit: "ft MSL")
                 BigStepper(title: "QNH", systemImage: "barometer",
-                           value: $conditions.qnhHpa, range: 950...1050, step: 1,
+                           value: $conditions.qnhHpa, range: 940...1060, step: 1,
                            unit: "hPa")
                 BigStepper(title: "Temperatur (OAT)", systemImage: "thermometer.medium",
-                           value: $conditions.temperatureC, range: -40...50, step: 1,
+                           value: $conditions.temperatureC, range: -40...55, step: 1,
                            unit: "°C")
             }
 
             SectionCard(title: "Wind", systemImage: "wind") {
-                BigStepper(title: "Windrichtung", systemImage: "location.north.line",
+                BigStepper(title: "Windrichtung (von)", systemImage: "location.north.line",
                            value: $conditions.windDirectionDeg, range: 0...360, step: 10,
-                           unit: "° (von)")
+                           unit: "°")
                 BigStepper(title: "Windgeschwindigkeit", systemImage: "wind",
                            value: $conditions.windSpeedKt, range: 0...60, step: 1,
                            unit: "kt")
@@ -37,7 +38,7 @@ struct ConditionsInputView: View {
                            value: $conditions.runwayHeadingDeg, range: 0...360, step: 10,
                            unit: "°")
                 BigStepper(title: "Verfügbare Länge", systemImage: "ruler",
-                           value: $conditions.runwayLengthM, range: 200...5000, step: 50,
+                           value: $conditions.runwayLengthM, range: 100...5000, step: 25,
                            unit: "m")
                 BigStepper(title: "Neigung", systemImage: "triangle",
                            value: $conditions.runwaySlopePercent, range: -5...5, step: 0.1,
@@ -57,6 +58,13 @@ struct ConditionsInputView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+            }
+
+            SectionCard(title: "Sicherheitszuschlag", systemImage: "shield.lefthalf.filled") {
+                BigStepper(title: "Zuschlag auf die erforderliche Strecke",
+                           systemImage: "shield.lefthalf.filled",
+                           value: $conditions.safetyFactorPercent, range: 0...100, step: 5,
+                           unit: "%")
             }
         }
     }

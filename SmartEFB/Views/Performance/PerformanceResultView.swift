@@ -1,9 +1,8 @@
 import SwiftUI
 
-/// Presents the computed distances, runway margin and derived atmospheric
-/// figures for a take-off or landing.
+/// Presents the computed distances, runway margin, derived atmospheric figures
+/// and any warnings for a take-off or landing.
 struct PerformanceResultView: View {
-    let mode: PerformanceMode
     let result: PerformanceResult
 
     var body: some View {
@@ -17,6 +16,10 @@ struct PerformanceResultView: View {
 
             marginTile
 
+            if !result.warnings.isEmpty {
+                warningsCard
+            }
+
             SectionCard(title: "Bedingungen (berechnet)", systemImage: "function") {
                 infoRow("Druckhöhe", value: result.pressureAltitudeFt, unit: "ft")
                 infoRow("Dichtehöhe", value: result.densityAltitudeFt, unit: "ft")
@@ -28,28 +31,65 @@ struct PerformanceResultView: View {
 
     private var marginTile: some View {
         let fits = result.fitsOnRunway
-        return VStack(alignment: .leading, spacing: 4) {
+        let tint = fits ? Theme.positive : Theme.warning
+
+        return VStack(alignment: .leading, spacing: 10) {
             Label(fits ? "Piste ausreichend" : "Piste zu kurz",
                   systemImage: fits ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                 .font(.headline)
-                .foregroundStyle(fits ? Theme.positive : Theme.warning)
+                .foregroundStyle(tint)
 
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("Erforderlich")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text(result.requiredDistanceM, format: .number.precision(.fractionLength(0)))
+                    .font(.system(.title2, design: .rounded).weight(.bold))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                Text("m")
+                    .foregroundStyle(.secondary)
+                if result.safetyFactorPercent > 0 {
+                    Text("inkl. +\(Int(result.safetyFactorPercent)) %")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text("Reserve")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Text(result.marginM, format: .number.precision(.fractionLength(0)))
-                    .font(.system(.title2, design: .rounded).weight(.bold))
+                    .font(.system(.title3, design: .rounded).weight(.bold))
                     .monospacedDigit()
-                    .foregroundStyle(fits ? Theme.positive : Theme.warning)
+                    .contentTransition(.numericText())
+                    .foregroundStyle(tint)
                 Text("m")
                     .foregroundStyle(.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background((fits ? Theme.positive : Theme.warning).opacity(0.14),
-                    in: .rect(cornerRadius: Theme.cornerRadius))
+        .background(tint.opacity(0.14), in: .rect(cornerRadius: Theme.cornerRadius))
+    }
+
+    private var warningsCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(result.warnings.indices, id: \.self) { index in
+                Label {
+                    Text(result.warnings[index])
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(Theme.caution)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Theme.caution.opacity(0.12), in: .rect(cornerRadius: Theme.cornerRadius))
     }
 
     private var windRow: some View {

@@ -1,26 +1,37 @@
 import SwiftUI
 
-/// Lets the pilot browse the aircraft catalogue, select the active aircraft,
-/// create their own aircraft and drill into detailed reference data.
+/// Lets the pilot manage their aircraft: create, select, edit and delete.
 struct AircraftSelectionView: View {
     @Environment(AircraftStore.self) private var store
     @Environment(FlightConditions.self) private var conditions
 
-    @State private var showCreate = false
-    @State private var showSettings = false
+    /// A single sheet destination: presenting several `.sheet` modifiers from one
+    /// view is unreliable, so all of them are driven by this one value.
+    private enum Destination: Identifiable {
+        case create
+        case edit(Aircraft)
+        case settings
+
+        var id: String {
+            switch self {
+            case .create: "create"
+            case .edit(let aircraft): "edit-\(aircraft.id)"
+            case .settings: "settings"
+            }
+        }
+    }
+
+    @State private var destination: Destination?
     @State private var aircraftToDelete: Aircraft?
-    @State private var aircraftToEdit: Aircraft?
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(store.aircraft) { aircraft in
-                        aircraftCard(aircraft)
-                    }
+            Group {
+                if store.isEmpty {
+                    NoAircraftView { destination = .create }
+                } else {
+                    list
                 }
-                .padding()
-                .animation(.snappy, value: store.aircraft)
             }
             .background(Theme.background)
             .navigationTitle("Flugzeug")
@@ -29,33 +40,33 @@ struct AircraftSelectionView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Einstellungen", systemImage: "gearshape") {
-                        showSettings = true
-                    }
+                    Button("Einstellungen", systemImage: "gearshape") { destination = .settings }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Flieger anlegen", systemImage: "plus") {
-                        showCreate = true
-                    }
+                    Button("Flugzeug anlegen", systemImage: "plus") { destination = .create }
                 }
             }
-            .sheet(isPresented: $showCreate) {
-                CreateAircraftView()
-            }
-            .sheet(item: $aircraftToEdit) { aircraft in
-                CreateAircraftView(editing: aircraft)
-            }
-            .sheet(isPresented: $showSettings) {
-                SettingsView()
+            .sheet(item: $destination) { destination in
+                switch destination {
+                case .create:
+                    CreateAircraftView()
+                case .edit(let aircraft):
+                    CreateAircraftView(editing: aircraft)
+                case .settings:
+                    SettingsView()
+                }
             }
             .confirmationDialog(
-                "Diesen Flieger löschen?",
-                isPresented: .init(get: { aircraftToDelete != nil }, set: { if !$0 { aircraftToDelete = nil } }),
+                "Dieses Flugzeug löschen?",
+                isPresented: Binding(
+                    get: { aircraftToDelete != nil },
+                    set: { if !$0 { aircraftToDelete = nil } }
+                ),
                 titleVisibility: .visible
             ) {
                 Button("Löschen", role: .destructive) {
                     if let aircraft = aircraftToDelete {
-                        store.deleteCustom(aircraft)
+                        store.delete(aircraft)
                     }
                     aircraftToDelete = nil
                 }
@@ -66,8 +77,21 @@ struct AircraftSelectionView: View {
         }
     }
 
+    private var list: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                ForEach(store.aircraft) { aircraft in
+                    aircraftCard(aircraft)
+                }
+            }
+            .padding()
+            .animation(.snappy, value: store.aircraft)
+        }
+    }
+
     private func aircraftCard(_ aircraft: Aircraft) -> some View {
-        let isSelected = aircraft.id == store.selected.id
+        let isSelected = aircraft.id == store.selected?.id
+
         return VStack(spacing: 0) {
             Button {
                 store.select(aircraft)
@@ -81,7 +105,7 @@ struct AircraftSelectionView: View {
 
             HStack(spacing: 0) {
                 NavigationLink(value: aircraft) {
-                    Label("Details & Geschwindigkeiten", systemImage: "info.circle")
+                    Label("Details", systemImage: "info.circle")
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
@@ -89,29 +113,29 @@ struct AircraftSelectionView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.accent)
 
-                if aircraft.isCustom {
-                    Button {
-                        aircraftToEdit = aircraft
-                    } label: {
-                        Image(systemName: "square.and.pencil")
-                            .padding()
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Theme.accent)
-
-                    Button(role: .destructive) {
-                        aircraftToDelete = aircraft
-                    } label: {
-                        Image(systemName: "trash")
-                            .padding()
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Theme.warning)
+                Button {
+                    destination = .edit(aircraft)
+                } label: {
+                    Label("Bearbeiten", systemImage: "square.and.pencil")
+                        .labelStyle(.iconOnly)
+                        .padding()
                 }
+                .buttonStyle(.plain)
+                .foregroundStyle(Theme.accent)
+
+                Button(role: .destructive) {
+                    aircraftToDelete = aircraft
+                } label: {
+                    Label("Löschen", systemImage: "trash")
+                        .labelStyle(.iconOnly)
+                        .padding()
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Theme.warning)
             }
         }
         .background(
-            (isSelected ? Theme.accent.opacity(0.12) : Color.white.opacity(0.05)),
+            isSelected ? Theme.accent.opacity(0.12) : Color.white.opacity(0.05),
             in: .rect(cornerRadius: Theme.cornerRadius)
         )
         .overlay {

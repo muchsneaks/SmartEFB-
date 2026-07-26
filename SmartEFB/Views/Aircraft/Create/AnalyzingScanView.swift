@@ -7,6 +7,9 @@ struct AnalyzingScanView: View {
     let image: UIImage
     var isAnalyzing: Bool
 
+    /// Describes the current phase, e.g. reading versus reviewing.
+    var phaseLabel: String = "KI analysiert POH-Seite …"
+
     @State private var scanOffset: CGFloat = -1
 
     var body: some View {
@@ -60,12 +63,14 @@ struct AnalyzingScanView: View {
         HStack(spacing: 8) {
             ProgressView()
                 .tint(.white)
-            Text("KI analysiert POH-Tabelle …")
+            Text(phaseLabel)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white)
+                .contentTransition(.opacity)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(.ultraThinMaterial, in: .capsule)
+        .animation(.snappy, value: phaseLabel)
     }
 }

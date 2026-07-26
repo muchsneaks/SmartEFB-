@@ -2,9 +2,8 @@ import SwiftUI
 import PhotosUI
 import UIKit
 
-/// Form section that drives the AI-assisted import of POH performance data:
-/// choosing the table type, picking or capturing a photo, showing progress and
-/// surfacing the confidence / warnings afterwards.
+/// Form section driving the AI import of a POH page: which chart it is, picking
+/// or capturing the photo, progress, and the resulting confidence / warnings.
 struct POHImportSection: View {
     @Bindable var vm: AircraftDraftViewModel
 
@@ -20,34 +19,46 @@ struct POHImportSection: View {
                 missingKeyNotice
             }
 
-            Picker("Tabellen-Typ", selection: $vm.importKind) {
+            Picker("Diese Seite zeigt", selection: $vm.importKind) {
                 ForEach(POHTableKind.allCases) { kind in
-                    Text(kind.displayName).tag(kind)
+                    Label(kind.displayName, systemImage: kind.systemImage).tag(kind)
                 }
             }
-            .pickerStyle(.menu)
+
+            Toggle(isOn: $vm.refineEnabled) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Zweiter Prüfdurchgang")
+                    Text("Die KI kontrolliert ihre eigene Ablesung. Genauer, dauert länger.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
 
             if let selectedImage {
-                AnalyzingScanView(image: selectedImage, isAnalyzing: vm.importState == .analyzing)
-                    .frame(maxHeight: 260)
-                    .listRowInsets(EdgeInsets())
-                    .padding(.vertical, 4)
+                AnalyzingScanView(
+                    image: selectedImage,
+                    isAnalyzing: vm.importState.isBusy,
+                    phaseLabel: phaseLabel
+                )
+                .frame(maxHeight: 280)
+                .listRowInsets(EdgeInsets())
+                .padding(.vertical, 4)
             }
 
             HStack(spacing: 12) {
                 Button(action: onTakePhoto) {
-                    Label("Foto aufnehmen", systemImage: "camera")
+                    Label("Foto", systemImage: "camera")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(!hasKey || vm.importState == .analyzing)
+                .disabled(!hasKey || vm.importState.isBusy)
 
                 PhotosPicker(selection: $pickerItem, matching: .images) {
                     Label("Aus Fotos", systemImage: "photo.on.rectangle")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .disabled(!hasKey || vm.importState == .analyzing)
+                .disabled(!hasKey || vm.importState.isBusy)
             }
             .padding(.vertical, 4)
 
@@ -55,19 +66,32 @@ struct POHImportSection: View {
         } header: {
             Label("POH-Import per KI", systemImage: "sparkles")
         } footer: {
-            Text("Fotografiere die Leistungstabelle aus dem Flughandbuch. Die KI liest die Werte aus – bitte anschließend prüfen und ggf. korrigieren.")
+            Text("Auch reine Diagramme (Nomogramme) werden gelesen: die KI verfolgt die Kurven und erzeugt daraus eine Tabelle, mit der die App rechnet.")
+        }
+    }
+
+    private var phaseLabel: String {
+        switch vm.importState {
+        case .extracting: "KI liest die POH-Seite …"
+        case .refining: "KI prüft ihre Ablesung …"
+        default: "Analyse läuft …"
         }
     }
 
     @ViewBuilder
     private var statusContent: some View {
         switch vm.importState {
-        case .idle, .analyzing:
+        case .idle, .extracting, .refining:
             EmptyView()
         case .success:
-            ImportStatusBanner(confidence: vm.confidence, warnings: vm.warnings)
-                .listRowInsets(EdgeInsets())
-                .padding(.vertical, 4)
+            VStack(spacing: 10) {
+                ImportStatusBanner(confidence: vm.confidence, warnings: vm.warnings)
+                if let verification = vm.verification {
+                    VerificationCard(outcome: verification)
+                }
+            }
+            .listRowInsets(EdgeInsets())
+            .padding(.vertical, 4)
         case .failed(let message):
             Label {
                 Text(message)

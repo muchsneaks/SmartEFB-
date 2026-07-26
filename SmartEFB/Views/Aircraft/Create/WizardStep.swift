@@ -24,7 +24,7 @@ enum WizardStep: Int, CaseIterable, Identifiable {
         switch self {
         case .identity: "Wie heißt dein Flugzeug und welchen Antrieb hat es?"
         case .weights: "Leermasse und maximale Startmasse eintragen."
-        case .performance: "POH-Tabelle fotografieren – die KI liest die Werte aus."
+        case .performance: "POH-Seiten fotografieren – auch Diagramme werden in Tabellen übersetzt."
         case .review: "Erkannte Werte kontrollieren und bei Bedarf korrigieren."
         case .summary: "Alles bereit. Zum Abschluss speichern."
         }
